@@ -1,0 +1,173 @@
+import 'package:flutter/material.dart';
+import 'package:project/Location.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+
+class OrderHistory extends StatefulWidget {
+  @override
+  _OrderHistoryState createState() => _OrderHistoryState();
+}
+class Order {
+  final String location;
+  final String date;
+  final String direction;
+
+  Order(this.location, this.date,this.direction);
+}
+class _OrderHistoryState extends State<OrderHistory> {
+
+  List<Order> orders = [
+    Order("El Abasseya", "28/11/2023", "Going"),
+    Order("Abdu-Basha", "1/12/2023", "Returning"),
+    Order("Heliopolis", "5/12/2023", "Going"),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    double screenHeight = MediaQuery.of(context).size.height;
+    double screenWidth = MediaQuery.of(context).size.width;
+    return Scaffold(
+        resizeToAvoidBottomInset:false,
+      appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Location()),);
+          },
+        ),
+        centerTitle: true,
+        title: Text(
+          "Orders",
+          style: GoogleFonts.pangolin(
+            textStyle: TextStyle(fontSize: screenHeight * 0.04, color: Colors.grey.shade900),
+          ),
+        ),
+        backgroundColor: Colors.blueGrey.shade300,
+      ),
+      backgroundColor: Colors.grey.shade200,
+      body: ListView.builder(
+        itemCount: orders.length,
+        itemBuilder: (context, index) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 1.0),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(screenHeight * 0.03), // Set border radius here
+              child: Card(
+                child: Container(
+                  height: screenHeight * 0.16,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey),
+                    color: Colors.grey.shade300, // Set darker background color here
+                  ),
+                  child: ListTile(
+                    title:
+                    Text(
+                      orders[index].location,
+                      style: GoogleFonts.pangolin(
+                        textStyle: TextStyle(
+                          fontSize: screenHeight * 0.044,
+                          color: Colors.grey.shade900,
+                        ),
+                      ),
+                    ),
+                    subtitle:
+                    Text(
+                      "${orders[index].date}\n"
+                          "${orders[index].direction}",
+                      style: GoogleFonts.pangolin(
+                        textStyle: TextStyle(
+                          fontSize: screenHeight * 0.034,
+                          color: Colors.grey.shade900,
+                        ),
+                      ),
+                    ),
+                    trailing:
+                        SizedBox(
+                        height: screenHeight * 0.6,
+                        child: Column(
+                          children: [
+                            SizedBox(
+                              height: screenHeight*0.05,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(screenHeight * 0.025),
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [Colors.blue.shade300, Colors.deepPurple.shade200],
+                                  ),
+                                ),
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      orders.removeAt(index);
+                                    });
+                                  },
+                                  child: Text(
+                                    'cancel',
+                                    style: GoogleFonts.pangolin(
+                                      textStyle: TextStyle(fontSize: screenHeight * 0.03, color: Colors.grey.shade900),
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(screenHeight * 0.015),
+                                    ),
+                                    minimumSize: Size(0, screenHeight * 0.005),
+                                    elevation: 0, // Optional: Set elevation to 0 for a flat design
+                                    backgroundColor: Colors.transparent, // Set the button's background to transparent
+                                    foregroundColor: Colors.transparent,  // Set the button's splash color to transparent
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: screenHeight*0.02),
+                            SizedBox(
+                              height: screenHeight*0.05,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(screenHeight * 0.025),
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [Colors.blue.shade300, Colors.deepPurple.shade200],
+                                  ),
+                                ),
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      orders.removeAt(index);
+                                    });
+                                  },
+                                  child: Text(
+                                    'Status',
+                                    style: GoogleFonts.pangolin(
+                                      textStyle: TextStyle(fontSize: screenHeight * 0.03, color: Colors.grey.shade900),
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(screenHeight * 0.015),
+                                    ),
+                                    minimumSize: Size(0, screenHeight * 0.005),
+                                    elevation: 0, // Optional: Set elevation to 0 for a flat design
+                                    backgroundColor: Colors.transparent, // Set the button's background to transparent
+                                    foregroundColor: Colors.transparent,  // Set the button's splash color to transparent
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
