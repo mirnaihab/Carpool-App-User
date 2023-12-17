@@ -12,14 +12,14 @@ import 'package:intl/intl.dart';
 
 class Request {
   final String direction;
-  final String status;
+  // final String status;
   final String date;
   final String routeID;
   final String driverID;
 
   Request({
     required this.direction,
-    required this.status,
+    // required this.status,
     required this.date,
     required this.routeID,
     required this.driverID,
@@ -56,7 +56,7 @@ class _OrderHistoryState extends State<OrderHistory> {
       _requests = snapshot.docs.map((doc) {
         return Request(
           direction: doc['Direction'],
-          status: doc['status'],
+          // status: doc['status'],
           date: doc['date'],
           routeID: doc['Route ID'],
           driverID: doc['Driver ID'],
@@ -75,7 +75,7 @@ class _OrderHistoryState extends State<OrderHistory> {
           .where('Driver ID', isEqualTo: request.driverID)
           .where('Route ID', isEqualTo: request.routeID)
           .where('Direction', isEqualTo: request.direction)
-          .where('status', isEqualTo: request.status)
+          // .where('status', isEqualTo: request.status)
           .where('date', isEqualTo: request.date)
           .get()
           .then((snapshot) {
@@ -280,439 +280,259 @@ class _OrderHistoryState extends State<OrderHistory> {
           ),
         ],
       ),
+
       backgroundColor: Colors.grey.shade200,
-      body: _requests == null ?
-      Center(child: CircularProgressIndicator()):
-      ListView.builder(
-        itemCount: _requests.length,
-        itemBuilder: (BuildContext context, int index) {
-          bool showDetailsButton = _requests[index].status == 'approved';
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-            child: Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15.0),
-              ),
-              child: ListTile(
-                contentPadding: EdgeInsets.all(16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15.0),
-                ),
+        body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('Requests')
+        .where('User ID', isEqualTo: _user!.uid) // Assuming 'UserID' is the field name in Requests collection
+        .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Center(
+                child: CircularProgressIndicator(),
+              );
+            } else if (snapshot.hasError) {
+              return Center(
+                child: Text('Error: ${snapshot.error}'),
+              );
+            } else {
+              final requests = snapshot.data!.docs;
 
-                tileColor: Colors.grey.shade300,
+              if (requests.isEmpty) {
+                return Center(
+                  child: Text('No requests found.'),
+                );
+              }
 
-                title:
-                Text(
-                  _requests[index].direction,
-                  style: TextStyle(
-                    fontSize: 19,
-                    color: Colors.grey.shade900,
-                  ),
-                ),
-                subtitle:
-                Row(
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Date: ${_requests[index].date}',
-                          style: TextStyle(
-                            fontSize: 17,
-                            color: Colors.grey.shade900,
-                          ),
+              return ListView.builder(
+                  itemCount: requests.length,
+                  itemBuilder: (context, index) {
+                    final request = requests[index].data() as Map<
+                        String,
+                        dynamic>;
+                    // Access the fields from the request document
+                    final direction = request['Direction'];
+                    final status = request['status'];
+                    bool showDetailsButton = status == 'approved';
+                    final date = request['Date'];
+                    return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                    child: Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15.0),
+                    ),
+                    child: ListTile(
+
+                      // body: _requests == null ?
+                      // Center(child: CircularProgressIndicator()):
+                      // ListView.builder(
+                      //   itemCount: _requests.length,
+                      //   itemBuilder: (BuildContext context, int index) {
+                      //     // bool showDetailsButton = _requests[index].status == 'approved';
+                      //     return Padding(
+                      //       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                      //       child: Card(
+                      //         elevation: 4,
+                      //         shape: RoundedRectangleBorder(
+                      //           borderRadius: BorderRadius.circular(15.0),
+                      //         ),
+                      //         child: ListTile(
+
+                      contentPadding: EdgeInsets.all(16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15.0),
+                      ),
+                      tileColor: Colors.grey.shade300,
+                      title:
+                      Text(
+                        _requests[index].direction,
+                        style: TextStyle(
+                          fontSize: 19,
+                          color: Colors.grey.shade900,
                         ),
-                        FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-                          future: FirebaseFirestore.instance
-                              .collection('Drivers')
-                              .doc(_requests[index].driverID)
-                              .collection('Routes')
-                              .doc(_requests[index].routeID)
-                              .get(),
-                          builder: (BuildContext context, AsyncSnapshot<DocumentSnapshot<Map<String, dynamic>>> snapshot) {
-                            if (snapshot.connectionState == ConnectionState.waiting) {
-                              return CircularProgressIndicator();
-                            }
-                            if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
-                              return Text('Error fetching data');
-                            }
-                            var routeData = snapshot.data!.data();
-                            return Text('Route: ${routeData?['name']} \n Meeting Point: \n${routeData?['meetingpoint']}\n '
-                                'Price: ${routeData?['price']}',
-                              style: GoogleFonts.pangolin(
-                                textStyle: TextStyle(
+                      ),
+                      subtitle:
+                      Row(
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Date: ${_requests[index].date}',
+                                style: TextStyle(
                                   fontSize: 17,
                                   color: Colors.grey.shade900,
                                 ),
-                              ),);
-                          },
-                        ),
-                        Row(
-                          children: [
-                            Text('Status: ',
-                              style: GoogleFonts.pangolin(
-                                textStyle: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey.shade900,
-                                ),
-                              ),),
-                            Image.asset(
-                              'assets/${_requests[index].status.toLowerCase()}.png',
-                              width: 30,
-                              height: 30,
-                              // height: screenHeight * 0.05,
-                              fit: BoxFit.cover,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    SizedBox(width: screenWidth*0.12),
-                    Column(
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.only(top:0, bottom: 20),
-                          child: SizedBox(
-                            height: screenHeight*0.05,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(screenHeight * 0.025),
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [Colors.blue.shade300, Colors.deepPurple.shade200],
-                                ),
                               ),
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  _showRemoveDialog(index);
-                                  // setState(() {
-                                  //   orders.removeAt(index);
-                                  // });
+                              FutureBuilder<
+                                  DocumentSnapshot<Map<String, dynamic>>>(
+                                future: FirebaseFirestore.instance
+                                    .collection('Drivers')
+                                    .doc(_requests[index].driverID)
+                                    .collection('Routes')
+                                    .doc(_requests[index].routeID)
+                                    .get(),
+                                builder: (BuildContext context, AsyncSnapshot<
+                                    DocumentSnapshot<
+                                        Map<String, dynamic>>> snapshot) {
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return CircularProgressIndicator();
+                                  }
+                                  if (snapshot.hasError || !snapshot.hasData ||
+                                      snapshot.data == null) {
+                                    return Text('Error fetching data');
+                                  }
+                                  var routeData = snapshot.data!.data();
+                                  return Text(
+                                    'Route: ${routeData?['name']} \n Meeting Point: \n${routeData?['meetingpoint']}\n '
+                                        'Price: ${routeData?['price']}',
+                                    style: GoogleFonts.pangolin(
+                                      textStyle: TextStyle(
+                                        fontSize: 17,
+                                        color: Colors.grey.shade900,
+                                      ),
+                                    ),);
                                 },
-                                child: Text(
-                                  'cancel',
-                                  style: GoogleFonts.pangolin(
-                                    textStyle: TextStyle(fontSize: screenHeight * 0.03, color: Colors.grey.shade900),
+                              ),
+                              Row(
+                                children: [
+                                  Text('Status: ',
+                                    style: GoogleFonts.pangolin(
+                                      textStyle: TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.grey.shade900,
+                                      ),
+                                    ),),
+                                  Image.asset(
+                                    'assets/${status.toLowerCase()}.png',
+                                    width: 30,
+                                    height: 30,
+                                    // height: screenHeight * 0.05,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          SizedBox(width: screenWidth * 0.12),
+                          Column(
+                            children: [
+                              Padding(
+                                padding: EdgeInsets.only(top: 0, bottom: 20),
+                                child: SizedBox(
+                                  height: screenHeight * 0.05,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(
+                                          screenHeight * 0.025),
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          Colors.blue.shade300,
+                                          Colors.deepPurple.shade200
+                                        ],
+                                      ),
+                                    ),
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        _showRemoveDialog(index);
+                                        // setState(() {
+                                        //   orders.removeAt(index);
+                                        // });
+                                      },
+                                      child: Text(
+                                        'cancel',
+                                        style: GoogleFonts.pangolin(
+                                          textStyle: TextStyle(
+                                              fontSize: screenHeight * 0.03,
+                                              color: Colors.grey.shade900),
+                                        ),
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              screenHeight * 0.015),
+                                        ),
+                                        minimumSize: Size(
+                                            0, screenHeight * 0.005),
+                                        elevation: 0,
+                                        // Optional: Set elevation to 0 for a flat design
+                                        backgroundColor: Colors.transparent,
+                                        // Set the button's background to transparent
+                                        foregroundColor: Colors
+                                            .transparent, // Set the button's splash color to transparent
+                                      ),
+                                    ),
                                   ),
                                 ),
-                                style: ElevatedButton.styleFrom(
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(screenHeight * 0.015),
+                              ),
+                              showDetailsButton ?
+                              SizedBox(
+                                height: screenHeight * 0.05,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(
+                                        screenHeight * 0.025),
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [
+                                        Colors.blue.shade300,
+                                        Colors.deepPurple.shade200
+                                      ],
+                                    ),
                                   ),
-                                  minimumSize: Size(0, screenHeight * 0.005),
-                                  elevation: 0, // Optional: Set elevation to 0 for a flat design
-                                  backgroundColor: Colors.transparent, // Set the button's background to transparent
-                                  foregroundColor: Colors.transparent,  // Set the button's splash color to transparent
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      _showModal(context, _requests[index]);
+                                    },
+                                    child: Text(
+                                      'Details',
+                                      style: GoogleFonts.pangolin(
+                                        textStyle: TextStyle(
+                                            fontSize: screenHeight * 0.03,
+                                            color: Colors.grey.shade900),
+                                      ),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(
+                                            screenHeight * 0.015),
+                                      ),
+                                      minimumSize: Size(
+                                          0, screenHeight * 0.005),
+                                      elevation: 0,
+                                      // Optional: Set elevation to 0 for a flat design
+                                      backgroundColor: Colors.transparent,
+                                      // Set the button's background to transparent
+                                      foregroundColor: Colors
+                                          .transparent, // Set the button's splash color to transparent
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
+                              ) :
+                              SizedBox(height: 10),
+                            ],
                           ),
-                        ),
-                        showDetailsButton ?
-                        SizedBox(
-                          height: screenHeight*0.05,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(screenHeight * 0.025),
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [Colors.blue.shade300, Colors.deepPurple.shade200],
-                              ),
-                            ),
-                            child: ElevatedButton(
-                              onPressed: () {
-                               _showModal(context, _requests[index]);
-                              },
-                              child: Text(
-                                'Details',
-                                style: GoogleFonts.pangolin(
-                                  textStyle: TextStyle(fontSize: screenHeight * 0.03, color: Colors.grey.shade900),
-                                ),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(screenHeight * 0.015),
-                                ),
-                                minimumSize: Size(0, screenHeight * 0.005),
-                                elevation: 0, // Optional: Set elevation to 0 for a flat design
-                                backgroundColor: Colors.transparent, // Set the button's background to transparent
-                                foregroundColor: Colors.transparent,  // Set the button's splash color to transparent
-                              ),
-                            ),
-                          ),
-                        ) :
-                        SizedBox(height: 10),
-                      ],
-                    ),
-                  ],
-                ),
-                // trailing:
+                        ],
+                      ),
+                      // trailing:
 
-                onTap: () {
-                  // Handle tile tap if needed
-                },
-              ),
-            ),
-          );
-        },
-      )
+                      onTap: () {
+                        // Handle tile tap if needed
+                      },
+                    ),
+                    ),
+                    );
+
+                  }
+              );
+            }
+          })
     );
   }
 }
-
-
-
-//   List<Order> orders = [
-//     Order("El Abasseya", "28/11/2023", "assets/finish.png", "Returning", "Finished"),
-//     Order("Abdu-Basha", "1/12/2023", "assets/declined.png", "going", "Declined"),
-//     Order("Heliopolis", "5/12/2023", "assets/approved.png", "Going", "Approved"),
-//     Order("Nasr City", "10/12/2023", "assets/pending.png", "Returning", "Pending"),
-//   ];
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     double screenHeight = MediaQuery.of(context).size.height;
-//     double screenWidth = MediaQuery.of(context).size.width;
-//
-//     void _showModal(BuildContext context, Order order) {
-//       showModalBottomSheet(
-//         context: context,
-//         builder: (BuildContext context) {
-//           return StatefulBuilder(
-//             builder: (BuildContext context, StateSetter setState) {
-//               return SingleChildScrollView(
-//                 child: Container(
-//                   height: screenHeight * 0.7,
-//                   padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
-//                   color: Colors.grey.shade300,
-//                   child: Column(
-//                     mainAxisSize: MainAxisSize.min,
-//                     children: [
-//                       SizedBox(height: screenHeight * 0.03),
-//                       Text(
-//                         "Your Driver's Name is: Mirna.\n"
-//                             "Phone Number: 01535544854\n"
-//                             "                   Car: Toyota \n"
-//                             "                Plate: AAL 252",
-//                         style: GoogleFonts.pangolin(
-//                           textStyle: TextStyle(
-//                             fontSize: screenHeight * 0.04,
-//                             fontWeight: FontWeight.bold,
-//                             color: Colors.grey.shade900,
-//                           ),
-//                         ),
-//                       ),
-//                       SizedBox(height: screenHeight * 0.05,),
-//                       Image.asset(
-//                         "assets/profile.png",
-//                         width: screenWidth * 0.5,
-//                         height: screenHeight * 0.25,
-//                         fit: BoxFit.cover,
-//                       ),
-//                       SizedBox(height: screenHeight * 0.02),
-//                       Text(
-//                         "This trip is ${order.direction}\n"
-//                             "Status : ${order.status}",
-//                         style: GoogleFonts.pangolin(
-//                           textStyle: TextStyle(
-//                             fontSize: screenHeight * 0.04,
-//                             color: Colors.grey.shade900,
-//                           ),
-//                         ),
-//                       ),
-//                       // Add more content here as needed
-//                     ],
-//                   ),
-//                 ),
-//               );
-//             },
-//           );
-//         },
-//       );
-//     }
-//
-//
-//     return Scaffold(
-//       resizeToAvoidBottomInset:false,
-//       appBar: AppBar(
-//         leading: IconButton(
-//           icon: Icon(Icons.arrow_back),
-//           onPressed: () {
-//             Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Location()),);
-//           },
-//         ),
-//         centerTitle: true,
-//         title: Text(
-//           "Orders",
-//           style: GoogleFonts.pangolin(
-//             textStyle: TextStyle(fontSize: screenHeight * 0.04, color: Colors.grey.shade900),
-//           ),
-//         ),
-//         backgroundColor: Colors.blueGrey.shade300,
-//         actions: [
-//           IconButton(
-//             icon: Icon(Icons.account_circle),
-//             onPressed: () {
-//               Navigator.pushReplacement(
-//                 context,
-//                 MaterialPageRoute(builder: (context) => ProfilePage()), // Replace with your profile page
-//               );
-//             },
-//           ),
-//           IconButton(
-//             icon: Icon(Icons.logout),
-//             onPressed: () {
-//               FirebaseAuth.instance.signOut();
-//               Navigator.pushReplacement(
-//                 context,
-//                 MaterialPageRoute(builder: (context) => LoginPage(), // Replace with your OrderHistory page
-//                 ),
-//               );
-//             },
-//           ),
-//         ],
-//       ),
-//       backgroundColor: Colors.grey.shade200,
-//       body: ListView.builder(
-//         itemCount: orders.length,
-//         itemBuilder: (context, index) {
-//           return Padding(
-//               padding: const EdgeInsets.symmetric(vertical: 3.0),
-//               child: ClipRRect(
-//                 borderRadius: BorderRadius.circular(screenHeight * 0.03), // Adjust the vertical padding as needed
-//                 child: Container(
-//                   decoration: BoxDecoration(
-//                     border: Border.all(color: Colors.grey),
-//                     color: Colors.grey.shade300, // Set darker background color here
-//                   ),
-//                   child: ListTile(
-//                     title: Row(
-//                       children: [
-//                         SizedBox(
-//                           width: screenWidth*0.4,
-//                           child: Column(
-//                             children: [
-//                               Text(
-//                                 orders[index].location,
-//                                 style: GoogleFonts.pangolin(
-//                                   textStyle: TextStyle(
-//                                     fontSize: screenHeight * 0.04,
-//                                     color: Colors.grey.shade900,
-//                                   ),
-//                                 ),
-//                               ),
-//                               SizedBox(width: screenHeight * 0.01),
-//
-//                               Text(
-//                                 "${orders[index].date}\n"
-//                                     "Status: ",
-//                                 style: GoogleFonts.pangolin(
-//                                   textStyle: TextStyle(
-//                                     fontSize: screenHeight * 0.034,
-//                                     color: Colors.grey.shade900,
-//                                   ),
-//                                 ),
-//                               ),
-//                               Image.asset(
-//                                 orders[index].Statuslogo,
-//                                 width: screenWidth * 0.1,
-//                                 height: screenHeight * 0.05,
-//                                 fit: BoxFit.cover,
-//                               ),
-//                               SizedBox(height:screenHeight*0.01),
-//                             ],
-//                           ),
-//                         ),
-//                         SizedBox(width: screenWidth*0.2),
-//                         SizedBox(
-//                           height: screenHeight * 0.12,
-//                           child:
-//                           Column(
-//                             children: [
-//                               SizedBox(
-//                                 height: screenHeight*0.05,
-//                                 child: Container(
-//                                   decoration: BoxDecoration(
-//                                     borderRadius: BorderRadius.circular(screenHeight * 0.025),
-//                                     gradient: LinearGradient(
-//                                       begin: Alignment.topLeft,
-//                                       end: Alignment.bottomRight,
-//                                       colors: [Colors.blue.shade300, Colors.deepPurple.shade200],
-//                                     ),
-//                                   ),
-//                                   child: ElevatedButton(
-//                                     onPressed: () {
-//                                       setState(() {
-//                                         orders.removeAt(index);
-//                                       });
-//                                     },
-//                                     child: Text(
-//                                       'cancel',
-//                                       style: GoogleFonts.pangolin(
-//                                         textStyle: TextStyle(fontSize: screenHeight * 0.03, color: Colors.grey.shade900),
-//                                       ),
-//                                     ),
-//                                     style: ElevatedButton.styleFrom(
-//                                       shape: RoundedRectangleBorder(
-//                                         borderRadius: BorderRadius.circular(screenHeight * 0.015),
-//                                       ),
-//                                       minimumSize: Size(0, screenHeight * 0.005),
-//                                       elevation: 0, // Optional: Set elevation to 0 for a flat design
-//                                       backgroundColor: Colors.transparent, // Set the button's background to transparent
-//                                       foregroundColor: Colors.transparent,  // Set the button's splash color to transparent
-//                                     ),
-//                                   ),
-//                                 ),
-//                               ),
-//                               SizedBox(height: screenHeight*0.02),
-//                               SizedBox(
-//                                 height: screenHeight*0.05,
-//                                 child: Container(
-//                                   decoration: BoxDecoration(
-//                                     borderRadius: BorderRadius.circular(screenHeight * 0.025),
-//                                     gradient: LinearGradient(
-//                                       begin: Alignment.topLeft,
-//                                       end: Alignment.bottomRight,
-//                                       colors: [Colors.blue.shade300, Colors.deepPurple.shade200],
-//                                     ),
-//                                   ),
-//                                   child: ElevatedButton(
-//                                     onPressed: () {
-//                                       _showModal(context, orders[index]);
-//                                     },
-//                                     child: Text(
-//                                       'Details',
-//                                       style: GoogleFonts.pangolin(
-//                                         textStyle: TextStyle(fontSize: screenHeight * 0.03, color: Colors.grey.shade900),
-//                                       ),
-//                                     ),
-//                                     style: ElevatedButton.styleFrom(
-//                                       shape: RoundedRectangleBorder(
-//                                         borderRadius: BorderRadius.circular(screenHeight * 0.015),
-//                                       ),
-//                                       minimumSize: Size(0, screenHeight * 0.005),
-//                                       elevation: 0, // Optional: Set elevation to 0 for a flat design
-//                                       backgroundColor: Colors.transparent, // Set the button's background to transparent
-//                                       foregroundColor: Colors.transparent,  // Set the button's splash color to transparent
-//                                     ),
-//                                   ),
-//                                 ),
-//                               ),
-//                             ],
-//                           ),
-//                         )
-//                       ],
-//                     ),
-//
-//                   ),
-//                 ),
-//               )
-//           );
-//         },
-//       ),
-//     );
-//   }
-// }
