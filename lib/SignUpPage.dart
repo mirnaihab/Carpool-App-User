@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'DatabaseHelper.dart';
 
 
 
@@ -16,6 +17,8 @@ class SignUpPage extends StatefulWidget {
   @override
   _SignUpPageState createState() => _SignUpPageState();
 }
+
+
 class _SignUpPageState extends State<SignUpPage>{
 
   final FirebaseAuthService _auth = FirebaseAuthService();
@@ -36,7 +39,10 @@ class _SignUpPageState extends State<SignUpPage>{
     super.initState();
     firestore = FirebaseFirestore.instance;
     users = firestore.collection('Users');
+
   }
+
+
 
   @override
   void dispose() {
@@ -212,6 +218,7 @@ class _SignUpPageState extends State<SignUpPage>{
 
   }
   void _signUp() async {
+    // checkForUsersAndSync();
 
     setState(() {
       isSigningUp = true;
@@ -267,11 +274,13 @@ class _SignUpPageState extends State<SignUpPage>{
         'password': sha256.convert(utf8.encode(password)).toString(),
         'phone': phone,
       });
+
       // Fluttertoast.showToast(msg: "User is successfully created");
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => Location()),
       );
+      // checkForUsersAndSync();
     } else {
       errorMessage='email already in use';
       print("errrrrrorrrrrr");

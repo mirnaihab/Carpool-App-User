@@ -6,19 +6,124 @@ import 'firebase_auth_services.dart';
 import 'LoginPage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'OrderHistory.dart';
+import 'DatabaseHelper.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+
+class UserProfile {
+  final String? uid;
+   String email;
+   String username;
+   int phone;
+
+  UserProfile({
+    required this.uid,
+    required this.email,
+    required this.username,
+    required this.phone,
+  });
+
+  void setEmail(String newEmail) {
+    email = newEmail;
+  }
+
+  void setUsername(String newUsername) {
+    username = newUsername;
+  }
+
+  void setPhone(int newPhone) {
+    phone = newPhone;
+  }
+
+  // Convert a Map<String, dynamic> to a UserProfile object
+  factory UserProfile.fromMap(Map<String, dynamic> map) {
+    return UserProfile(
+      uid: map['uid'],
+      email: map['email'],
+      username: map['username'],
+      phone: map['phone'],
+    );
+  }
+
+  // Convert a UserProfile object to a Map<String, dynamic>
+  Map<String, dynamic> toMap() {
+    return {
+      'uid': uid,
+      'email': email,
+      'username': username,
+      'phone': phone,
+    };
+  }
+}
+
 
 class ProfilePage extends StatefulWidget {
+  final String userId;
+
+
+  ProfilePage({required this.userId});
+
   @override
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  Map<String, String> profileDetails = {
-    'Name': 'Mirna Ihab',
-    'Phone': '03107085816',
-    'Email': '16p6793@eng.asu.edu.eg',
-  };
 
+  late UserProfile? userProfile = UserProfile(uid: "", email: "", username: "", phone: 0);
+  late DatabaseHelper dbHelper = DatabaseHelper();
+
+  // Map<String, String> profileDetails = {
+  //   'Name': 'Mirna Ihab',
+  //   'Phone': '03107085816',
+  //   'Email': '16p6793@eng.asu.edu.eg',
+  // };
+
+  @override
+  void initState(){
+    super.initState();
+    initializeUid();
+
+  }
+
+  void initializeUid() async{
+    if (widget.userId != null) {
+      dbHelper = DatabaseHelper();
+      await dbHelper.updateSQLiteFromFirestore(widget.userId);
+      fetchUserProfile();
+    }
+  }
+
+  void fetchUserProfile() async {
+    // Fetch user profile data from SQLite based on userId
+    if (widget.userId != null) {
+      userProfile = await dbHelper.getUserProfile(widget.userId!);
+      setState(() {});
+
+    }
+  }
+  void _updateUserDetails(String field, String newValue) async {
+    try {
+      if (widget.userId != null) {
+        await FirebaseFirestore.instance
+            .collection('Users')
+            .doc(widget.userId)
+            .update({field: newValue});
+
+        setState(() {
+          // Update the local userProfile object when the data is updated in Firestore
+          if (field == 'email') {
+            userProfile?.setEmail(newValue);
+          } else if (field == 'username') {
+            userProfile?.setUsername(newValue);
+          } else if (field == 'phone') {
+            userProfile?.setPhone(int.parse(newValue));
+          }
+        });
+      }
+    } catch (e) {
+      print("Error updating data: $e");
+    }
+  }
   @override
   Widget build(BuildContext context) {
     double screenHeight = MediaQuery
@@ -87,10 +192,13 @@ class _ProfilePageState extends State<ProfilePage> {
               CircleAvatar(
                 radius: 70,
                 backgroundImage: AssetImage('assets/profile.png'),
-              ), SizedBox(height: screenHeight * 0.06),
-              for (var entry in profileDetails.entries)
-                itemProfile(entry.key, entry.value, _getIcon(entry.key)),
+              ),
+              SizedBox(height: screenHeight * 0.06),
+              itemProfile('username', userProfile?.username ?? '', CupertinoIcons.person),
+              itemProfile('phone', userProfile?.phone.toString() ?? '', CupertinoIcons.phone),
+              itemProfile('email', userProfile?.email ?? '', CupertinoIcons.mail),
             ],
+
           ),
         ),
       ),
@@ -99,11 +207,11 @@ class _ProfilePageState extends State<ProfilePage> {
 
   IconData _getIcon(String key) {
     switch (key) {
-      case 'Name':
+      case 'username':
         return CupertinoIcons.person;
-      case 'Phone':
+      case 'phone':
         return CupertinoIcons.phone;
-      case 'Email':
+      case 'email':
         return CupertinoIcons.mail;
       default:
         return Icons.error;
@@ -130,20 +238,32 @@ class _ProfilePageState extends State<ProfilePage> {
               actions: [
                 TextButton(
                   onPressed: () {
+
                     Navigator.of(context).pop();
                   },
                   child: Text('Cancel', style: TextStyle(fontSize: 20, color: Colors.grey.shade900)),
                 ),
                 TextButton(
                   onPressed: () {
+                    _updateUserDetails(
+                      title,
+                      textEditingController.text,
+                    );
                     setState(() {
-                      profileDetails[title] =
-                          textEditingController
-                              .text; // Update the map entry with edited value
+                      if (title == 'email') {
+                        userProfile?.setEmail(textEditingController.text);
+                      } else if (title == 'username') {
+                        userProfile?.setUsername(textEditingController.text);
+                      } else if (title == 'Phone') {
+                        userProfile?.setPhone(int.parse(textEditingController.text));
+                      }
                     });
                     Navigator.of(context).pop();
                   },
-                  child: Text('Save', style: TextStyle(fontSize: 20, color: Colors.grey.shade900)),
+                  child: Text(
+                    'Save',
+                    style: TextStyle(fontSize: 20, color: Colors.grey.shade900),
+                  ),
                 ),
               ],
             );
@@ -177,3 +297,4 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 }
+

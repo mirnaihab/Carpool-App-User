@@ -20,12 +20,15 @@ class Cart extends StatefulWidget {
 }
 
 class _CartState extends State<Cart> {
-
-  // Add a FirebaseAuth instance
+  bool isLoading = false;
+  User? user = FirebaseAuth.instance.currentUser;  // Add a FirebaseAuth instance
   final FirebaseAuth _auth = FirebaseAuth.instance;
-
+  // _user = FirebaseAuth.instance.currentUser;
   // Function to create a request in Firestore
   Future<void> createRequest() async {
+    setState(() {
+      isLoading = true;
+    });
     try {
       // Fetch the currently logged-in user
       User? user = _auth.currentUser;
@@ -82,22 +85,19 @@ class _CartState extends State<Cart> {
           'date': date,
         });
 
-        // Navigate to the Payment page
         Navigator.pop(context); // Close the bottom sheet
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (context) => Payment(
-              price: widget.locations.price,
-            ),
-          ),
+          MaterialPageRoute(builder: (context) => OrderHistory()),
         );
-      }
-    } catch (e) {
+      }} catch (e) {
       print('Error creating request: $e');
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
     }
   }
-
   Future<Map<String, String>> fetchRouteDetails(String locationName) async {
     // Query Firestore to find the Route ID based on locationName and driver's routes
     Map<String, String> routeDetails = {'driverID': '', 'routeID': ''};
@@ -159,24 +159,69 @@ class _CartState extends State<Cart> {
 
     void _showModal() {
       String description = '';
-
+      DateTime now = DateTime.now();
+      bool showError = false;
       // Define the description for each selected option
       switch (selectedOption) {
         case 'From ASU Gate 3':
+          if (now.hour <= 13 && selectedDate.isBefore(now)) {
+          showError = true;
+          description = 'Reservation should be made prior to or at the same day of the request';
+          }else if (now.hour >= 13 && selectedDate.isAtSameMomentAs(now)) {
+            showError = true;
+            description = 'Reservation should be before 1:00 pm of the same day of the request';
+          }else if (now.hour >= 13 && selectedDate.isBefore(now)) {
+            showError = true;
+            description = 'Reservation should be before 1:00 pm of the same day of the request';
+          }   else {
           description =
-          'the pickup time is @ 5:30 pm and it must be reserved before 1 pm the same day.';
+          'The pickup time is @ 5:30 pm and it must be reserved before 1 pm the same day.';
+         }
           break;
         case 'From ASU Gate 4':
-          description =
-          'the pickup time is @ 5:30 pm and it must be reserved before 1 pm the same day.';
+          if (now.hour <= 13 && selectedDate.isBefore(now)) {
+            showError = true;
+            description = 'Reservation should be made prior to or at the same day of the request';
+          }else if (now.hour >= 13 && selectedDate.isAtSameMomentAs(now)) {
+            showError = true;
+            description = 'Reservation should be before 1:00 pm of the same day of the request';
+          }else if (now.hour >= 13 && selectedDate.isBefore(now)) {
+            showError = true;
+            description = 'Reservation should be before 1:00 pm of the same day of the request';
+          }   else {
+            description =
+            'The pickup time is @ 5:30 pm and it must be reserved before 1 pm the same day.';
+          }
           break;
         case 'To ASU Gate 3':
-          description =
-          'the pickup time is @ 7:30 am and it must be reserved before 10 pm the previous day.';
+          if (now.hour >= 22 && selectedDate.isAfter(now)) {
+            showError = true;
+            description = 'Reservation should be before 10:00 pm';
+          } else if (now.hour <= 22 && selectedDate.isBefore(now)) {
+            showError = true;
+            description = 'Morning reservation should be made one day prior to the request';
+          }else if (now.hour <= 22 && selectedDate.isAtSameMomentAs(now)) {
+            showError = true;
+            description = 'Morning reservation should be made one day prior to the request';
+          }  else {
+            description =
+            'The pickup time is @ 5:30 pm and it must be reserved before 1 pm the same day.';
+          }
           break;
         case 'To ASU Gate 4':
-          description =
-          'the pickup time is @ 7:30 am and it must be reserved before 10 pm the previous day.';
+          if (now.hour >= 22 && selectedDate.isAfter(now)) {
+            showError = true;
+            description = 'Reservation should be before 10:00 pm';
+          } else if (now.hour <= 22 && selectedDate.isBefore(now)) {
+            showError = true;
+            description = 'Morning reservation should be made one day prior to the request';
+          }else if (now.hour <= 22 && selectedDate.isAtSameMomentAs(now)) {
+            showError = true;
+            description = 'Morning reservation should be made one day prior to the request';
+          }  else {
+            description =
+            'The pickup time is @ 5:30 pm and it must be reserved before 1 pm the same day.';
+          }
           break;
         default:
           description = '';
@@ -217,6 +262,17 @@ class _CartState extends State<Cart> {
                       ),
                     ),
                     SizedBox(height: screenHeight * 0.08),
+                    showError
+                        ? Text(
+                      "Error: $description",
+                      style: GoogleFonts.pangolin(
+                        textStyle: TextStyle(
+                          fontSize: screenHeight * 0.03,
+                          color: Colors.red,
+                        ),
+                      ),
+                    )
+                        :
                     Padding(
                       padding: EdgeInsets.only(
                         left: screenWidth * 0.1,
@@ -243,24 +299,31 @@ class _CartState extends State<Cart> {
                         //       MaterialPageRoute(builder: (context) => Payment()),
                         //     );
                         //   },
+
                         child: ElevatedButton(
                           onPressed: () {
+                            setState(() {
+                              isLoading = true;
+                            });
                             createRequest();
-                          //   Navigator.pop(context);
-                          // Navigator.pushReplacement(
-                            Navigator.pop(context);
-                            Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => Payment(
-                                price: widget.locations.price, // Pass the price to the Payment page
-                              ),
-                            ),
 
-                          );
+                            Navigator.pop(context);
+                          //   Navigator.pushReplacement(
+                          //   context,
+                          //   MaterialPageRoute(
+                          //     builder: (context) => Payment(
+                          //       price: widget.locations.price, // Pass the price to the Payment page
+                          //     ),
+                          //   ),
+                          //
+                          // );
+                          //   Navigator.pushReplacement(
+                          //     context,
+                          //     MaterialPageRoute(builder: (context) => OrderHistory()),
+                          //   );
                         },
                           child: Text(
-                            'Proceed To Checkout',
+                            'Book This Ride',
                             style: GoogleFonts.pangolin(
                               textStyle: TextStyle(
                                 fontSize: screenHeight * 0.035,
@@ -344,7 +407,7 @@ class _CartState extends State<Cart> {
             onPressed: () {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => ProfilePage()), // Replace with your profile page
+                MaterialPageRoute(builder: (context) => ProfilePage(userId: user!.uid)), // Replace with your profile page
               );
             },
           ),

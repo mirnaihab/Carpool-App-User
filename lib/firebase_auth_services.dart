@@ -50,7 +50,10 @@ class FirebaseAuthService {
 
   }
 
-
-
-
+  String getCurrentUserID() {
+    // Replace this with your method to retrieve the user ID from Firestore
+    // For example, if you're using Firebase Authentication:
+    User? user = FirebaseAuth.instance.currentUser;
+    return user?.uid ?? ''; // Return the user ID or an empty string
+  }
 }

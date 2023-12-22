@@ -10,12 +10,14 @@ import 'Location.dart';
 import 'firebase_auth_services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'Profile.dart';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 
 class Payment extends StatefulWidget {
-  final double price; // Add a parameter to receive the price
-  Payment({ required this.price});
+  final String requestId;
+  final int price;
+
+  Payment({required this.requestId, required this.price});
 
   @override
   State<Payment> createState() => _PaymentState();
@@ -37,6 +39,26 @@ class _PaymentState extends State<Payment> {
     ),
   );
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+  User? user = FirebaseAuth.instance.currentUser;
+  void updateRequestStatus() async {
+    try {
+      // Update the Firestore document with the provided request ID to 'paid'
+      await FirebaseFirestore.instance
+          .collection('Requests')
+          .doc(widget.requestId) // Use the provided request ID
+          .update({'status': 'paid'});
+      print("statttttttt");
+      // Navigate to the OrderHistory page after the status is updated
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => OrderHistory()),
+      );
+    } catch (error) {
+      print("Error updating request status: $error");
+      // Handle error if update fails
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -70,6 +92,7 @@ class _PaymentState extends State<Payment> {
           leading: IconButton(
               icon: Icon(Icons.arrow_back),
               onPressed: () {
+
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => Location()),
@@ -90,7 +113,7 @@ class _PaymentState extends State<Payment> {
               onPressed: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => ProfilePage()), // Replace with your profile page
+                  MaterialPageRoute(builder: (context) => ProfilePage(userId: user!.uid)), // Replace with your profile page
                 );
               },
             ),
@@ -214,10 +237,11 @@ class _PaymentState extends State<Payment> {
                                 ),
                                 child: ElevatedButton(
                                   onPressed: () {
-                                    Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(builder: (context) => OrderHistory()),
-                                    );
+                                    updateRequestStatus();
+                                    // Navigator.pushReplacement(
+                                    //   context,
+                                    //   MaterialPageRoute(builder: (context) => OrderHistory()),
+                                    // );
                                   },
                                   // child: Text(
                                   //   'Validate',
